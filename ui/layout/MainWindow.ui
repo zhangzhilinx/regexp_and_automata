@@ -29,6 +29,9 @@
          <property name="text">
           <string>生成自动机</string>
          </property>
+         <property name="shortcut">
+          <string>Ctrl+Return</string>
+         </property>
         </widget>
        </item>
       </layout>
@@ -51,14 +54,7 @@
           </attribute>
           <layout class="QGridLayout" name="gridLayout_2">
            <item row="0" column="0">
-            <widget class="QLabel" name="lbl_graph_nfa">
-             <property name="text">
-              <string>暂无图像</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-            </widget>
+            <widget class="GraphView" name="graphview_nfa"/>
            </item>
           </layout>
          </widget>
@@ -68,14 +64,7 @@
           </attribute>
           <layout class="QGridLayout" name="gridLayout_3">
            <item row="0" column="0">
-            <widget class="QLabel" name="lbl_graph_dfa">
-             <property name="text">
-              <string>暂无图像</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-            </widget>
+            <widget class="GraphView" name="graphview_dfa"/>
            </item>
           </layout>
          </widget>
@@ -85,14 +74,7 @@
           </attribute>
           <layout class="QGridLayout" name="gridLayout_4">
            <item row="0" column="0">
-            <widget class="QLabel" name="lbl_graph_min_dfa">
-             <property name="text">
-              <string>暂无图像</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-            </widget>
+            <widget class="GraphView" name="graphview_min_dfa"/>
            </item>
           </layout>
          </widget>
@@ -120,12 +102,18 @@
            <property name="text">
             <string>匹配</string>
            </property>
+           <property name="shortcut">
+            <string>Ctrl+M</string>
+           </property>
           </widget>
          </item>
          <item>
           <widget class="QPushButton" name="pb_test_search">
            <property name="text">
             <string>查找</string>
+           </property>
+           <property name="shortcut">
+            <string>F3</string>
            </property>
           </widget>
          </item>
@@ -138,6 +126,24 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>GraphView</class>
+   <extends>QGraphicsView</extends>
+   <header>ui.GraphView</header>
+  </customwidget>
+ </customwidgets>
+ <tabstops>
+  <tabstop>le_regex</tabstop>
+  <tabstop>pb_generate_fa</tabstop>
+  <tabstop>tabwdg_graph</tabstop>
+  <tabstop>graphview_nfa</tabstop>
+  <tabstop>te_test_str</tabstop>
+  <tabstop>pb_test_match</tabstop>
+  <tabstop>pb_test_search</tabstop>
+  <tabstop>graphview_dfa</tabstop>
+  <tabstop>graphview_min_dfa</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

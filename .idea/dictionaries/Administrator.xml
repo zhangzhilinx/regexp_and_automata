@@ -2,6 +2,9 @@
   <dictionary name="Administrator">
     <words>
       <w>antialiasing</w>
+      <w>graphviz</w>
+      <w>opengl</w>
+      <w>pixmap</w>
     </words>
   </dictionary>
 </component>
