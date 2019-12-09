@@ -204,7 +204,6 @@ class Regex:
                 else:
                     raise Exception("未知的Token类型")
             assert len(self.nfa_stk), 1
-            print(self.__count)
             return self.nfa_stk[0]
 
     lexer = RegexLexer()
@@ -246,16 +245,16 @@ class Regex:
         number = 0
         dfa_move_symbols = symbols.copy()
         dfa_move_symbols.remove(EPSILON)
-        dfa_state = DFA.State(number)
-        dfa_closures = {dfa_state: closures[states[0]]}
-        dfa_table = {dfa_state: dict()}
+        dfa_tail = dfa_head = DFA.State(number)
+        dfa_closures = {dfa_head: closures[nfa.head]}
+        dfa_table = {dfa_head: dict()}
         number += 1
-        bfs = deque([dfa_state])
+        bfs = deque([dfa_head])
         while len(bfs):
             state = bfs.popleft()
             for sym in dfa_move_symbols:
                 new_closure = set()
-                for row in dfa_closures[state]:   # 寻找所有后继状态
+                for row in dfa_closures[state]:  # 寻找所有后继状态
                     for x in table[row][sym]:
                         new_closure.update(closure(x))
                 for k, v in dfa_closures.items():
@@ -263,22 +262,92 @@ class Regex:
                         dfa_table[state][sym] = k
                         break
                 else:
-                    dfa_state = DFA.State(number)
-                    bfs.append(dfa_state)
-                    dfa_closures[dfa_state] = new_closure
-                    dfa_table[state] = {sym: dfa_state}
+                    dfa_tail = DFA.State(number)
+                    bfs.append(dfa_tail)
+                    dfa_closures[dfa_tail] = new_closure
+                    dfa_table[state][sym] = dfa_tail
+                    dfa_table[dfa_tail] = {k: None for k in dfa_move_symbols}
                     number += 1
+
         # dfa_states = dfa_closures.keys()
-        pass
+        # dfa_states = dfa_table.keys()
+        for s in dfa_table.keys():
+            for k, v in dfa_table[s].items():
+                s.move[k] = v
 
-        for src in states:
-            for toward, dst in src.move.items():
-                table[src][toward].add(dst)
-            for dst in src.epsilons:
-                table[src][EPSILON].add(dst)
-
-        pass
+        return DFA.DFA(dfa_head, {dfa_tail})
 
     @classmethod
     def minimize_dfa(cls, dfa):
-        raise NotImplementedError()
+        """
+        [原地修改]
+        :param dfa:
+        :return:
+        """
+        states, symbols = find_all_reachable_states(dfa.head)
+        table = {s: {sym: s.move.get(sym, None)
+                     for sym in symbols}
+                 for s in states}
+
+        final_states, non_final_states = set(), set()
+        for s in states:
+            if s.is_end:
+                final_states.add(s)
+            else:
+                non_final_states.add(s)
+
+        subsets = [non_final_states, final_states]
+
+        # 分割出各个不相交等价状态子集的集合
+        found_new = True
+        while found_new:
+            found_new = False
+            for subset in subsets:
+                # 所属集合表，检查等价性
+                x = {s: table[s].copy() for s in subset}
+                for s, kv in x.items():
+                    for k, v in kv.items():
+                        for item in subsets:
+                            if x[s][k] in item:
+                                x[s][k] = item
+                                break
+                        else:
+                            x[s][k] = None
+                bucket = dict()
+                for k, v in x.items():
+                    if v is not None:
+                        bk = tuple(sorted(
+                            ((i[0], tuple(sorted(i[1],
+                                                 key=lambda e: e.name)))
+                             for i in v.items())
+                        ))
+                        if bk in bucket:
+                            bucket[bk].add(k)
+                        else:
+                            bucket[bk] = {k}
+                new_subsets = bucket.values()
+                if len(new_subsets) > 1:
+                    found_new = True
+                    subsets.remove(subset)
+                    subsets.extend(new_subsets)
+                    break
+
+        # 为前面分割出的各个不相交子集选出代表元素
+        # 同时需要保证原DFA的起始状态一定是该状态所在子集的代表元素
+        agent = dict()
+        for subset in subsets:
+            if dfa.head in subset:
+                for s in subset:
+                    agent[s] = dfa.head
+            else:
+                sorted_subset = tuple(sorted(subset, key=lambda s: s.name))
+                for s in sorted_subset:
+                    agent[s] = sorted_subset[0]
+
+        # 重建DFA状态之间的联系
+        new_states = tuple(set(agent.values()))
+        for src in new_states:
+            for toward, dst in src.move.items():
+                src.move[toward] = agent[dst]
+
+        return DFA.DFA(dfa.head, set([s for s in new_states if s.is_end]))

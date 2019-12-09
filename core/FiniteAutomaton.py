@@ -64,7 +64,7 @@ def get_dot_content(start):
 
 def find_all_reachable_states(start):
     number = 0
-    states, symbols = {start: number}, {EPSILON}
+    states, symbols = {start: number}, set()
     number += 1
     bfs = deque([start])
     while len(bfs):
@@ -77,6 +77,8 @@ def find_all_reachable_states(start):
                     states[d] = number
                     number += 1
         for dst in src.epsilons:
+            if EPSILON not in symbols:
+                symbols.add(EPSILON)
             if dst not in states:
                 bfs.append(dst)
                 states[dst] = number
