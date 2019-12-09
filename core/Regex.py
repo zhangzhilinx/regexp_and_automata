@@ -229,7 +229,7 @@ class Regex:
 
         states, symbols = find_all_reachable_states(nfa.head)
         table = {s: {sym: None for sym in symbols} for s in states}
-        closures = {s: closure(nfa.head) for s in states}
+        closures = {s: closure(s) for s in states}
 
         for s in states:
             for sym in filter(lambda e: e != EPSILON, symbols):
@@ -245,9 +245,10 @@ class Regex:
         number = 0
         dfa_move_symbols = symbols.copy()
         dfa_move_symbols.remove(EPSILON)
-        dfa_tail = dfa_head = DFA.State(number)
+        dfa_head = DFA.State(number)
         dfa_closures = {dfa_head: closures[nfa.head]}
         dfa_table = {dfa_head: dict()}
+        dfa_tails = set()
         number += 1
         bfs = deque([dfa_head])
         while len(bfs):
@@ -256,26 +257,43 @@ class Regex:
                 new_closure = set()
                 for row in dfa_closures[state]:  # 寻找所有后继状态
                     for x in table[row][sym]:
-                        new_closure.update(closure(x))
-                for k, v in dfa_closures.items():
-                    if new_closure == v:
-                        dfa_table[state][sym] = k
-                        break
+                        # new_closure.update(closure(x))
+                        new_closure.update(closures[x])
+
+                # print('[%s] -%s-> [%s]' % (state, sym, new_closure))
+                if len(new_closure):
+                    for k, v in dfa_closures.items():
+                        if new_closure == v:
+                            dfa_table[state][sym] = k
+                            break
+                    else:
+                        dfa_node = DFA.State(number)
+                        number += 1
+                        bfs.append(dfa_node)
+                        dfa_closures[dfa_node] = new_closure
+                        dfa_table[state][sym] = dfa_node
+                        dfa_table[dfa_node] = {k: None
+                                               for k in dfa_move_symbols}
+                        for i in new_closure:
+                            if i.is_end:
+                                dfa_node.is_end = True
+                                dfa_tails.add(dfa_node)
+                                break
                 else:
-                    dfa_tail = DFA.State(number)
-                    bfs.append(dfa_tail)
-                    dfa_closures[dfa_tail] = new_closure
-                    dfa_table[state][sym] = dfa_tail
-                    dfa_table[dfa_tail] = {k: None for k in dfa_move_symbols}
-                    number += 1
+                    # RECORD: 注意考虑闭包结果为空的情况
+                    dfa_table[state][sym] = None
+                    pass
 
         # dfa_states = dfa_closures.keys()
         # dfa_states = dfa_table.keys()
+
+        # 按照状态表构建自动机状态之间的连接
         for s in dfa_table.keys():
             for k, v in dfa_table[s].items():
-                s.move[k] = v
+                if v is not None:
+                    s.move[k] = v
 
-        return DFA.DFA(dfa_head, {dfa_tail})
+        return DFA.DFA(dfa_head, dfa_tails)
 
     @classmethod
     def minimize_dfa(cls, dfa):
@@ -296,6 +314,7 @@ class Regex:
             else:
                 non_final_states.add(s)
 
+        # subsets储存着多个不相交的子集
         subsets = [non_final_states, final_states]
 
         # 分割出各个不相交等价状态子集的集合
@@ -303,28 +322,36 @@ class Regex:
         while found_new:
             found_new = False
             for subset in subsets:
-                # 所属集合表，检查等价性
+                # 当前子集中所有NFA状态及其邻边状态
+                # {状态: {字符: 该状态在该字符下转移的目标状态}}
                 x = {s: table[s].copy() for s in subset}
-                for s, kv in x.items():
-                    for k, v in kv.items():
+                # 将x转换成所属集合表，用于检查等价性。转换成如下格式：
+                # {状态: {字符: 该字符下转移的目标状态属于subsets中的哪个子集}}
+                for s, move in x.items():
+                    for toward, d in move.items():
                         for item in subsets:
-                            if x[s][k] in item:
-                                x[s][k] = item
+                            if d in item:
+                                x[s][toward] = item
                                 break
                         else:
-                            x[s][k] = None
+                            # 如果上述的目标状态无法在subsets的任何子中找到
+                            # 即:目标状态为None(该状态在该字符下没有目标转移状态)
+                            # 那就设为None
+                            x[s][toward] = None
                 bucket = dict()
-                for k, v in x.items():
+                for s, v in x.items():
                     if v is not None:
                         bk = tuple(sorted(
-                            ((i[0], tuple(sorted(i[1],
-                                                 key=lambda e: e.name)))
-                             for i in v.items())
+                            [(i[0],
+                              None if i[1] is None else tuple(
+                                  sorted(i[1], key=lambda e: e.name))
+                              )
+                             for i in v.items()]
                         ))
                         if bk in bucket:
-                            bucket[bk].add(k)
+                            bucket[bk].add(s)
                         else:
-                            bucket[bk] = {k}
+                            bucket[bk] = {s}
                 new_subsets = bucket.values()
                 if len(new_subsets) > 1:
                     found_new = True
