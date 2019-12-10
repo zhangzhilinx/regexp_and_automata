@@ -32,12 +32,40 @@ class DFA:
         else:
             return False
 
+    def search(self, text, start=0):
+        if isinstance(self.head, State):
+            return dfa_search(self.head, text, start)
+        else:
+            return -1, 0
 
-def dfa_match(start, text):
-    state = start
+
+def dfa_match(state_head, text):
+    state = state_head
     for c in text:
         try:
             state = state.move[c]
         except KeyError:
             return False
     return state.is_end
+
+
+def dfa_search(state_head, text, start=0):
+    size = len(text)
+    state = state_head
+    pi = end = start
+    while pi < size:
+        try:
+            state = state.move[text[pi]]
+            pi += 1
+            if state.is_end:
+                end = pi
+        except KeyError:
+            if end > start:
+                return start, end - start
+            start += 1
+            state = state_head
+            pi = start
+    if end > start:
+        return start, end - start
+    else:
+        return -1, 0

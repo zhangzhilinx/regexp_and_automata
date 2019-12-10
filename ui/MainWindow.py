@@ -1,7 +1,7 @@
 import graphviz
 from PyQt5.QtCore import pyqtSlot, Qt
-from PyQt5.QtGui import QPixmap, QResizeEvent
-from PyQt5.QtWidgets import QMainWindow, QMessageBox
+from PyQt5.QtGui import QPixmap, QResizeEvent, QTextCursor
+from PyQt5.QtWidgets import QMainWindow, QMessageBox, QLabel
 from graphviz import Source
 
 from core import DFA
@@ -16,10 +16,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         super(MainWindow, self).__init__()
         super(MainWindow, self).setupUi(self)
 
+        self.statusbar.addPermanentWidget(
+            QLabel("Copyright (C) 2019 张志林 MPL v2")
+        )
+
         self._graph_views = [self.graphview_nfa,
                              self.graphview_dfa,
                              self.graphview_min_dfa]
         self._had_fit_in = [False] * len(self._graph_views)
+        self._search_outset = 0
 
         for graph_view in self._graph_views:
             graph_view.set_renderer(GraphView.TYPE_OPENGL)
@@ -35,6 +40,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             graph_view.fitInView(graph_view.sceneRect(),
                                  Qt.KeepAspectRatioByExpanding)
             self._had_fit_in[idx] = True
+
+    @pyqtSlot(name='on_te_test_str_textChanged')
+    def on_te_test_str_text_changed(self):
+        self._reset_search_outset()
 
     @pyqtSlot()
     def on_pb_generate_fa_clicked(self):
@@ -66,8 +75,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self._min_dfa = min_dfa
 
             self._had_fit_in = [False] * len(self._graph_views)
+            self._reset_search_outset()
             self.grp_test.setEnabled(True)
-            self.statusbar.showMessage("[信息] 自动机及其图像生成完毕，"
+            self.statusbar.showMessage("[消息] 自动机及其图像生成完毕，"
                                        "可以鼠标用拖动调整位置或者使用滚轮缩放")
         else:
             QMessageBox.critical(self, "错误", "请输入正确的正规表达式")
@@ -81,4 +91,30 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def on_pb_test_search_clicked(self):
-        pass
+        if isinstance(self._min_dfa, DFA.DFA):
+            text = self.te_test_str.toPlainText()
+            search_pos, search_len = self._min_dfa.search(text,
+                                                          self._search_outset)
+            if search_pos != -1:
+                self._search_outset = search_pos + search_len
+                cur = self.te_test_str.textCursor()
+                cur.setPosition(search_pos)
+                cur.setPosition(search_pos + search_len,
+                                QTextCursor.KeepAnchor)
+                self.te_test_str.setTextCursor(cur)
+                self.statusbar.showMessage("[成功] 向后查找时查找到新的匹配文本",
+                                           2000)
+            else:
+                self._reset_search_outset()
+
+                cur = self.te_test_str.textCursor()
+                cur.setPosition(cur.position())
+                self.te_test_str.setTextCursor(cur)
+
+                self.statusbar\
+                    .showMessage("[失败] 向后查找时找不到任何新的匹配文本，"
+                                 "查找起始指针将回到文本头部以便重新查找",
+                                 2000)
+
+    def _reset_search_outset(self):
+        self._search_outset = 0
