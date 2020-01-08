@@ -87,7 +87,7 @@ def find_all_reachable_states(start):
                                  key=lambda e: e[1])], list(symbols)
 
 
-def eliminate_duplicate_states(start):
+def eliminate_unused_states(start):
     states, _ = find_all_reachable_states(start)
     final_reachable, final_unreachable = set(), set()
 
@@ -125,7 +125,7 @@ def eliminate_duplicate_states(start):
                 break
             break
 
-    visited = {k: False for k, _ in find_all_reachable_states(start)}
+    visited = {k: False for k in find_all_reachable_states(start)[0]}
 
     def states_pruning(src):
         visited[src] = True
@@ -159,7 +159,7 @@ def eliminate_duplicate_states(start):
 除非使用为每次DFS搜索创建对应的标记数组，同时乱序DFS（按顺序DFS必死）
 也还没实现完，不过这样的代码实现，不要也罢，仅作前车之鉴
 """
-# def eliminate_duplicate_states(start):
+# def eliminate_unused_states(start):
 #     """
 #     [原地修改]
 #     :param start:

@@ -111,7 +111,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 cur.setPosition(cur.position())
                 self.te_test_str.setTextCursor(cur)
 
-                self.statusbar\
+                self.statusbar \
                     .showMessage("[失败] 向后查找时找不到任何新的匹配文本，"
                                  "查找起始指针将回到文本头部以便重新查找",
                                  2000)

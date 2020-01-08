@@ -1,11 +1,11 @@
 import unittest
 
 from core import FiniteAutomaton
-from core.FiniteAutomaton import get_dot_content, eliminate_duplicate_states
+from core.FiniteAutomaton import get_dot_content, eliminate_unused_states
 
 
 class MyTestCase(unittest.TestCase):
-    def test_eliminate_duplicate_states_0(self):
+    def test_eliminate_unused_states_0(self):
         s = [FiniteAutomaton.FiniteAutomatonState('s%d' % i)
              for i in range(13)]
 
@@ -31,7 +31,7 @@ class MyTestCase(unittest.TestCase):
         s[10].move['m'] = s[12]
 
         print(get_dot_content(s[0]))
-        eliminate_duplicate_states(s[0])
+        eliminate_unused_states(s[0])
         print(get_dot_content(s[0]))
 
         # TODO 通过测试方式来校验结果

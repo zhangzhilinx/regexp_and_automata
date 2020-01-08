@@ -85,6 +85,7 @@ class GraphView(QGraphicsView):
         pixmap_item.setZValue(0)
 
         scene.addItem(pixmap_item)
+        scene.setSceneRect(scene.itemsBoundingRect())
 
     def load_svg_bytes(self, svg_bytes):
         scene = self.scene()
@@ -100,3 +101,4 @@ class GraphView(QGraphicsView):
         svg_item.setZValue(0)
 
         scene.addItem(svg_item)
+        scene.setSceneRect(scene.itemsBoundingRect())

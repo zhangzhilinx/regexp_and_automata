@@ -1,8 +1,8 @@
 from collections import deque
 
 from core import NFA, DFA
-from core.FiniteAutomaton import find_all_reachable_states, EPSILON, \
-    FiniteAutomatonState
+from core.FiniteAutomaton import FiniteAutomatonState
+from core.FiniteAutomaton import find_all_reachable_states, EPSILON
 
 
 class TypedToken:
@@ -54,14 +54,14 @@ class RegexParser:
     简单的Regex语法的解析器，生成正规表达式的后缀表达式
 
     解析器使用固定写法的递归下降法实现，文法如下：
-    regex = regex $
+    regex'   = regex $
     regex    = term [|] regex
              | term
     term     = factor term
              | factor
     factor   = unit [*]
-             | unit [+]
              | unit [?]
+             | unit [+]
              | unit
     unit     = ( regex )
              | char
@@ -307,7 +307,7 @@ class Regex:
                      for sym in symbols}
                  for s in states}
 
-        final_states, non_final_states = set(), set()
+        non_final_states, final_states = set(), set()
         for s in states:
             if s.is_end:
                 final_states.add(s)
